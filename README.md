@@ -9,3 +9,5 @@ then go in ``netgross_stuff`` ad run ``pip install .``
 Main scripts are
  - ``refactor.py`` that does list of times --> list of active nodes per frame 
  - ``animate.py`` that does the animation
+
+First run the refactoring then the animation.
