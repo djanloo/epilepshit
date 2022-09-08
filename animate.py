@@ -1,6 +1,7 @@
 import numpy as np
 import json
 from rich.progress import track
+from rich import print
 
 from netgross.network import undNetwork
 from netgross import netplot
@@ -32,7 +33,6 @@ class Normal(undNetwork):
                     adjacency_matrix[i,j] = 0.0
                     adjacency_matrix[j,i] = 0.0
 
-
         np.fill_diagonal(adjacency_matrix , 0.0)
 
         ## Yes I didn't know how to spell adjaajahecncy
@@ -40,54 +40,55 @@ class Normal(undNetwork):
         self.net.initialize_embedding(dim=2)
         self.net.cMDE([1.0, 0.5, 0.1], [0.5, 0.01, 0.0], [10, 200, 500])
 
-        # Files
-        self.exc_file = open(EXCFILE, "r")
-        self.inh_file = open(INHFILE, "r")
+        # The frame dictionary is stored in files
+        # Tells which bastard is ON at a specific time
+        with open(EXCFILE, "r") as ex_f:
+            self.exc_frame_dictionary = json.load(ex_f)
+        
+        with open(INHFILE, "r") as in_f:
+             self.inh_frame_dictionary = json.load(in_f)
+
+        self.max_time_index = max(self.exc_frame_dictionary["max_time_index"],
+                                    self.inh_frame_dictionary["max_time_index"])
 
         # Time of simulation displayed
         self.time = 0.0
+        self.time_index = 0
     
     def update(self):
 
         print(f"Elapsed time: {self.time: .1f} us")
 
-        for i, node in enumerate(self.net):
+        # Refresh each neuron to be at rest, then turn ON the ones specified
 
+        for i, node in enumerate(self.net):
             # Neuron rest color: can be different from exc (0<i<400) and inh (400<i<500)
             if i < 400:
                 node.value = 0.0
             else:
                 node.value = 0.0
 
-        #### SUPER ALERT
         # BINNING IS MADE HERE
         binning_time = 1_000 # 10 us
         timesteps_per_frame = binning_time/TIMESTEP
 
-        for repeat in range(int(timesteps_per_frame)):
-            try:
-                # However it went, increase the animation display time
-                # Must be stated before the dangerous operation 
-                # because catching the error prevents from tracing the timestep
-                self.time += 0.01 # One timestep (us)
+        for single_frame_time in range(int(timesteps_per_frame)):
 
-                # Tries to load a line from both files
-                # If weird shit happens just skips
-                # And weird shit can mean no firing nodes in that frame
-                firing_exc = np.array(json.loads(self.exc_file.readline())).reshape((-1,))
-                firing_inh = np.array(json.loads(self.inh_file.readline())).reshape((-1,))
+            self.time += 0.01 # One timestep (us)
+            self.time_index += 1
 
-            except json.JSONDecodeError:
-                continue
-            else:
+            if self.time_index > self.max_time_index:
+                print("[red] Time index is over maximum value [/red]")
 
-                for node in firing_exc:
-                    # Excitatory are 0 to 400
-                    self.net.nodes[node].value = 1.0
+            firing_exc = self.exc_frame_dictionary.get(self.time_index)
+            if firing_exc is not None:
+                for ex_neuron in firing_exc:
+                    self.net.nodes[ex_neuron].value = 1.0
 
-                for node in firing_inh:
-                    # First inhibitory is 400th of global network
-                    self.net.nodes[node + 400].value = -1.0
+            firing_inh = self.inh_frame_dictionary.get(self.time_index)
+            if firing_inh is not None:
+                for inh_neuron in firing_inh:
+                    self.net.nodes[inh_neuron + 400].value = -1.0
 
 A = Normal()
 
@@ -96,9 +97,6 @@ netplot.scat_kwargs['cmap'] = 'viridis'
 
 animation = netplot.animate_super_network(A, A.update,
                                             frames=100, interval=60, blit=False)
-animation.save(f'{ACTIVITY}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end='\r'), dpi=80)
-# plt.show()
-A.exc_file.close()
-A.inh_file.close()
+animation.save(f'{ACTIVITY}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end=' '), dpi=80)
 
 
