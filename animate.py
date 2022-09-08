@@ -68,7 +68,7 @@ class Normal(undNetwork):
             else:
                 node.value = 0.0
 
-        # BINNING IS MADE HERE
+        ## BINNING IS MADE HERE
         binning_time = 1_000 # 10 us
         timesteps_per_frame = binning_time/TIMESTEP
 
