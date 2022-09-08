@@ -7,7 +7,7 @@ from netgross.network import undNetwork
 from netgross import netplot
 from matplotlib import pyplot as plt
 
-ACTIVITY = "metastable"
+ACTIVITY = "normal"
 EXCFILE = f"binned_excitatory_{ACTIVITY}.json"
 INHFILE =  f"binned_inhibitory_{ACTIVITY}.json"
 TIMESTEP = 0.01 #us
@@ -56,9 +56,12 @@ class Normal(undNetwork):
         self.time_index = 0
 
         ## BINNING IS MADE HERE
-        binning_time = 5 # 10 us
+        binning_time = 5 # us
         self.timesteps_per_frame = binning_time/TIMESTEP
         print(f"One frame is [green] {self.timesteps_per_frame} [/green] timesteps")
+        self.frames_required = int(self.max_time_index/self.timesteps_per_frame)
+        print(f"Total: {self.frames_required} frames available ({self.max_time_index*TIMESTEP} us)")
+
 
     
     def update(self):
@@ -98,7 +101,8 @@ netplot.plot_lines = False
 netplot.scat_kwargs['cmap'] = 'viridis'
 
 animation = netplot.animate_super_network(A, A.update,
-                                            frames=100, interval=60, blit=False)
+                                            frames= 100,#A.frames_required, 
+                                            interval=60, blit=False)
 animation.save(f'{ACTIVITY}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end='\n'), dpi=80)
 
 
