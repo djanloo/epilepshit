@@ -47,13 +47,19 @@ class Normal(undNetwork):
         
         with open(INHFILE, "r") as in_f:
              self.inh_frame_dictionary = json.load(in_f)
-
+        
         self.max_time_index = max(self.exc_frame_dictionary["max_time_index"],
                                     self.inh_frame_dictionary["max_time_index"])
 
         # Time of simulation displayed
         self.time = 0.0
         self.time_index = 0
+
+        ## BINNING IS MADE HERE
+        binning_time = 5 # 10 us
+        self.timesteps_per_frame = binning_time/TIMESTEP
+        print(f"One frame is [green] {self.timesteps_per_frame} [/green] timesteps")
+
     
     def update(self):
 
@@ -68,24 +74,20 @@ class Normal(undNetwork):
             else:
                 node.value = 0.0
 
-        ## BINNING IS MADE HERE
-        binning_time = 1_000 # 10 us
-        timesteps_per_frame = binning_time/TIMESTEP
+        for single_frame_time in range(int(self.timesteps_per_frame)):
 
-        for single_frame_time in range(int(timesteps_per_frame)):
-
-            self.time += 0.01 # One timestep (us)
+            self.time += TIMESTEP
             self.time_index += 1
 
             if self.time_index > self.max_time_index:
-                print("[red] Time index is over maximum value [/red]")
+                print(f"[red] Time index ({self.time_index}) is over maximum value ({self.max_time_index}) [/red]")
 
-            firing_exc = self.exc_frame_dictionary.get(self.time_index)
+            firing_exc = self.exc_frame_dictionary.get(str(self.time_index))
             if firing_exc is not None:
                 for ex_neuron in firing_exc:
                     self.net.nodes[ex_neuron].value = 1.0
 
-            firing_inh = self.inh_frame_dictionary.get(self.time_index)
+            firing_inh = self.inh_frame_dictionary.get(str(self.time_index))
             if firing_inh is not None:
                 for inh_neuron in firing_inh:
                     self.net.nodes[inh_neuron + 400].value = -1.0
@@ -97,6 +99,6 @@ netplot.scat_kwargs['cmap'] = 'viridis'
 
 animation = netplot.animate_super_network(A, A.update,
                                             frames=100, interval=60, blit=False)
-animation.save(f'{ACTIVITY}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end=' '), dpi=80)
+animation.save(f'{ACTIVITY}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end='\n'), dpi=80)
 
 
