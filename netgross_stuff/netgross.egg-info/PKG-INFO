@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: netgross
+Version: 1.0.0
+Summary: Module for network computing
+Author: djanloo
+Author-email: becuzzigianluca@gmail.com
+Provides-Extra: test
+License-File: LICENSE
