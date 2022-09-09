@@ -50,11 +50,6 @@ class Normal(undNetwork):
         adjacency_matrix[0:400, 400:500] = np.ones((400, 100), dtype=np.float32)
         adjacency_matrix[400:500, 0:400] = adjacency_matrix[0:400, 400:500].T
 
-        # plt.imshow(adjacency_matrix)
-        # plt.colorbar()
-        # plt.show()
-        # exit()
-
         # Kill an entry with probability 1-p: allegedly not correct but it's the first attempt
         # But first set the seed for reproducibility
         np.random.seed(17)
@@ -72,7 +67,6 @@ class Normal(undNetwork):
         self._turn_off_all()
         self.net.initialize_embedding(dim=2)
         self.net.cMDE([1.0, 0.5, 0.1], [0.8, 0.01, 0.0], [100, 200, 500])
-
 
         # The frame dictionary is stored in files
         # Tells which bastard is ON at a specific time
@@ -100,9 +94,8 @@ class Normal(undNetwork):
 
         # Other stats to trace
         self.frame_index = 0
-        self.exc_firing_per_frame = np.zeros(FRAMES)
-        self.inh_firing_per_frame = np.zeros(FRAMES)
-
+        self.exc_firing_per_frame = np.zeros(FRAMES + 2)
+        self.inh_firing_per_frame = np.zeros(FRAMES + 2)
 
         self._turn_off_all()
 
@@ -120,13 +113,8 @@ class Normal(undNetwork):
                 node.value = -0.5
     
     def update(self):
-
-        print(f"Elapsed time: {self.time: .1f} us")
-
         # Refresh each neuron to be at rest, then turn ON the ones specified
-
-        self._turn_off_all()
-        
+        self._turn_off_all()  
         for single_frame_time in range(int(self.timesteps_per_frame)):
 
             self.time += TIMESTEP
@@ -148,6 +136,8 @@ class Normal(undNetwork):
                     self.inh_firing_per_frame[self.frame_index] += 1
         
         self.frame_index += 1
+        print(f"Elapsed time: {self.time: .1f} us")
+
 
 A = Normal()
 
@@ -158,8 +148,9 @@ animation.save(f'{activity}_binning_{BINNING_TIME}.gif',progress_callback = lamb
 
 # for i in range(FRAMES):
 #     A.update()
-n_ = np.arange(0,FRAMES)
+n_ = np.arange(0,len(A.exc_firing_per_frame))
 plt.step(n_, A.exc_firing_per_frame)
 plt.step(n_, A.inh_firing_per_frame)
 plt.xlabel("frame index")
+plt.title(f"{activity}")
 plt.show()
