@@ -9,8 +9,8 @@ import cnets
 from netgross import netplot
 from matplotlib import pyplot as plt
 
-TIMESTEP = 0.01 #us
-BINNING_TIME = 1.5#us
+TIMESTEP = 0.01 #ms
+BINNING_TIME = 1.5#ms
 FRAMES = 100
 
 # Parser to set stuff from cmdline
@@ -19,7 +19,7 @@ parser.add_argument('--activity')
 args = parser.parse_args()
 
 if args.activity is None:
-    exit("Specify an activity you must")
+    exit("Specify an activity you mmst")
 else:
     activity = args.activity
 
@@ -37,8 +37,8 @@ class Normal(undNetwork):
     def __init__(self):
 
         # Try to visualize the inhibitory and excitatory neurons
-        # as two distinct clusters
-        # Build a full-two-cluster adj matrix then kill some element
+        # as two distinct clmsters
+        # Build a full-two-clmster adj matrix then kill some element
         adjacency_matrix = np.zeros((500, 500), dtype=np.float32)
 
         # EXC-EXC submatrix
@@ -90,12 +90,12 @@ class Normal(undNetwork):
         self.timesteps_per_frame = BINNING_TIME/TIMESTEP
         print(f"One frame is [green] {self.timesteps_per_frame} [/green] timesteps")
         self.frames_required = int(self.max_time_index/self.timesteps_per_frame)
-        print(f"Total: {self.frames_required} frames available ({self.max_time_index*TIMESTEP} us)")
+        print(f"Total: {self.frames_required} frames available ({self.max_time_index*TIMESTEP} ms)")
 
         # Other stats to trace
         self.frame_index = 0
-        self.exc_firing_per_frame = np.zeros(FRAMES + 2)
-        self.inh_firing_per_frame = np.zeros(FRAMES + 2)
+        self.exc_firing_per_frame = np.zeros(FRAMES + 5) # For some reason matplotlib does more frames than i want
+        self.inh_firing_per_frame = np.zeros(FRAMES + 5)
 
         self._turn_off_all()
 
@@ -136,7 +136,7 @@ class Normal(undNetwork):
                     self.inh_firing_per_frame[self.frame_index] += 1
         
         self.frame_index += 1
-        print(f"Elapsed time: {self.time: .1f} us")
+        print(f"Elapsed time: {self.time: .1f} ms")
 
 
 A = Normal()

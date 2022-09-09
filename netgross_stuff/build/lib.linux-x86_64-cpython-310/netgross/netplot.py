@@ -53,7 +53,7 @@ def get_graphics(net):
     return fig, ax
 
 
-def update_scatter(ax, net, colors, normalize_colors=True):
+def update_scatter(ax, net, colors, normalize_colors=False):
     """Updates the scatter plot position and colors"""
 
     position = net.to_scatter()
