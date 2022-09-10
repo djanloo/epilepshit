@@ -10,25 +10,31 @@ from netgross import netplot
 from matplotlib import pyplot as plt
 
 TIMESTEP = 0.01 #ms
-BINNING_TIME = 1.5#ms
+BINNING_TIME = 0.5#ms
 FRAMES = 100
 
 # Parser to set stuff from cmdline
 parser = argparse.ArgumentParser()
 parser.add_argument('--activity')
+parser.add_argument('--frames')
+parser.add_argument('--noanim', action="store_true")
+
 args = parser.parse_args()
 
 if args.activity is None:
-    exit("Specify an activity you mmst")
+    exit("Specify an activity you must")
 else:
     activity = args.activity
+
+if args.frames is not None:
+    FRAMES = args.frames
 
 EXCFILE = f"binned_excitatory_{activity}.json"
 INHFILE =  f"binned_inhibitory_{activity}.json"
 
 # Netplot setup
 netplot.plot_lines = False
-netplot.scat_kwargs['cmap'] = 'viridis'
+netplot.scat_kwargs['cmap'] = 'plasma'
 netplot.scat_kwargs['vmin'] = -1.0
 netplot.scat_kwargs['vmax'] = 1.0
 
@@ -66,7 +72,7 @@ class Normal(undNetwork):
         self.net = undNetwork.from_adiacence(adjacency_matrix)
         self._turn_off_all()
         self.net.initialize_embedding(dim=2)
-        self.net.cMDE([1.0, 0.5, 0.1], [0.8, 0.01, 0.0], [100, 200, 500])
+        self.net.cMDE([1.0, 0.5, 0.1], [0.8, 0.01, 0.0],  [100, 200, 500]) #[1,1,1] )#  [1,1,1] )# 
 
         # The frame dictionary is stored in files
         # Tells which bastard is ON at a specific time
@@ -78,31 +84,36 @@ class Normal(undNetwork):
         
         self.max_time_index = max(self.exc_frame_dictionary["max_time_index"],
                                     self.inh_frame_dictionary["max_time_index"])
+        self.inh_frame_dictionary.pop("max_time_index")
 
         # Time of simulation displayed
         self.time = 0.0
 
-        # Starts from first event
-        self.inh_frame_dictionary.pop("max_time_index")
-        self.time_index = min(int(tindex) for tindex in self.inh_frame_dictionary.keys())
-
         ## BINNING IS MADE HERE
         self.timesteps_per_frame = BINNING_TIME/TIMESTEP
+
+        # Starts from first event
+        # for normal set 2923
+        self.time_index = min(int(tindex) for tindex in self.inh_frame_dictionary.keys())
+        if activity == "normal":
+            self.time_index = 2923
+        print(f"Starting from time step {self.time_index}")
+
         print(f"One frame is [green] {self.timesteps_per_frame} [/green] timesteps")
         self.frames_required = int(self.max_time_index/self.timesteps_per_frame)
         print(f"Total: {self.frames_required} frames available ({self.max_time_index*TIMESTEP} ms)")
 
-        # Other stats to trace
+        # Other stats to trace frames and activity per frame
         self.frame_index = 0
-        self.exc_firing_per_frame = np.zeros(FRAMES + 5) # For some reason matplotlib does more frames than i want
-        self.inh_firing_per_frame = np.zeros(FRAMES + 5)
+        self.exc_firing_per_frame = np.zeros(FRAMES + 1) # For some reason matplotlib does more frames than i want
+        self.inh_firing_per_frame = np.zeros(FRAMES + 1)
 
         self._turn_off_all()
 
         # Check to see if I was drunk when I wrote netgross
         for i in range(self.net.N):
             if self.net.nodes[i].n != i:
-                print("Yes, [red]you were drunk.[/red]")
+                print("Yes, [red]you were drunk.100[/red]")
 
 
     def _turn_off_all(self):
@@ -110,7 +121,7 @@ class Normal(undNetwork):
             if node.n < 400:
                 node.value = 0.5
             else:
-                node.value = -0.5
+                node.value = -0.1
     
     def update(self):
         # Refresh each neuron to be at rest, then turn ON the ones specified
@@ -141,16 +152,18 @@ class Normal(undNetwork):
 
 A = Normal()
 
-animation = netplot.animate_super_network(A, A.update,
-                                            frames=FRAMES,#A.frames_required, 
-                                            interval=100, blit=False)
-animation.save(f'{activity}_binning_{BINNING_TIME}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end='\n'), dpi=80)
-
-# for i in range(FRAMES):
-#     A.update()
-n_ = np.arange(0,len(A.exc_firing_per_frame))
-plt.step(n_, A.exc_firing_per_frame)
-plt.step(n_, A.inh_firing_per_frame)
-plt.xlabel("frame index")
-plt.title(f"{activity}")
-plt.show()
+print(netplot.scat_kwargs)
+if not args.noanim:
+    animation = netplot.animate_super_network(A, A.update,
+                                                frames=FRAMES,#A.frames_required, 
+                                                interval=100, blit=False)
+    animation.save(f'{activity}_binning_{BINNING_TIME}.gif',progress_callback = lambda i, n: print(f'Saving frame {i} of {n}', end='\n'), dpi=80)
+else:
+    for i in range(FRAMES):
+        A.update()
+    n_ = np.arange(0,len(A.exc_firing_per_frame))
+    plt.step(n_, A.exc_firing_per_frame)
+    plt.step(n_, A.inh_firing_per_frame)
+    plt.xlabel("frame index")
+    plt.title(f"{activity}")
+    plt.show()
