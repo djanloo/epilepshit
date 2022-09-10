@@ -39,6 +39,7 @@ def get_graphics(net):
         scat_kwargs.setdefault("zorder", 1)
 
     # plots points
+    print(f"When getting graphics kwargs are {scat_kwargs}")
     net.scatplot = ax.scatter(*empty, **scat_kwargs)
     artists = (net.scatplot,)
 
@@ -85,9 +86,14 @@ def update_scatter(ax, net, colors, normalize_colors=False):
     ax.set_ylim((min_, max_))
 
     # colors
+    vmin, vmax = scat_kwargs.get("vmin"), scat_kwargs.get("vmax")
     mappable = scat.set_array(np.array(list(colors)))
     if normalize_colors:
+        print("Normalizing colors")
         vmin, vmax = min(colors), max(colors)
+        scat.set_clim(vmin, vmax)
+    # Updates to fixed values
+    elif vmin is not None and vmax is not None:
         scat.set_clim(vmin, vmax)
 
 
